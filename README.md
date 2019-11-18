@@ -1,6 +1,6 @@
-# WarpFleet Synchronizer
+# WarpFleet™ Synchronizer
 
-This Web server aims to synchronize git repositories and serve macros for the WarpFleet resolver
+This Web server aims to synchronize git repositories and serve macros for the WarpFleet™ resolver
 
 ## Configuration sample
 
@@ -50,6 +50,8 @@ Sync specific repo
 List repositories
 
     http://localhost:8080/api/repos
+
+
 > Copyright 2019  SenX S.A.S.
 >
 > [https://senx.io](https://senx.io)
