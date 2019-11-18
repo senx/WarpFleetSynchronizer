@@ -1,0 +1,16 @@
+{
+  "name": "warpfleet-synchronizer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@gitlab.com:senx/WarpFleetSynchronizer.git",
+  "author": "SenX <contact@senx.io>",
+  "license": "Apache-2",
+  "private": true,
+  "scripts": {
+    "doc": "apidoc -i src/main/java -o apidoc && apidoc-markdown -p apidoc -o doc/API.md"
+  },
+  "devDependencies": {
+    "apidoc": "^0.18.0",
+    "apidoc-markdown": "^0.2.1"
+  }
+}

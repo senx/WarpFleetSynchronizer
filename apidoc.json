@@ -1,0 +1,16 @@
+{
+  "name": "WarpFleetSynchronizer",
+  "version": "0.0.1",
+  "description": "This Web server aims to synchronize git repositories and serve macros for the WarpFleet resolver",
+  "title": "WarpFleetSynchronizer",
+  "url" : "https://api.example.com",
+  "sampleUrl": "http://localhost:8080",
+  "header": {
+    "title": "WarpFleetSynchronizer",
+    "filename": "README.md"
+  },
+  "template": {
+    "withCompare": false,
+    "withGenerator": true
+  }
+}
