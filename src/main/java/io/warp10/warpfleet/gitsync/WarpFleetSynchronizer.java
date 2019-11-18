@@ -17,9 +17,11 @@ import java.io.IOException;
 import static spark.Spark.before;
 import static spark.Spark.exception;
 import static spark.Spark.get;
+import static spark.Spark.ipAddress;
 import static spark.Spark.notFound;
 import static spark.Spark.port;
 import static spark.Spark.staticFiles;
+import static spark.Spark.threadPool;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +50,9 @@ public class WarpFleetSynchronizer {
     try {
       CONF = init(args[0]);
 
-      port(8080);
-
+      port(CONF.optInt("port", 8080));
+      ipAddress(CONF.optString("host", "0.0.0.0"));
+      threadPool(8);
       // Serving macros
       staticFiles.externalLocation(new File(MACROS_PATH).getAbsolutePath());
 
@@ -86,9 +89,6 @@ public class WarpFleetSynchronizer {
        */
       get("/api/sync", WarpFleetSynchronizer::syncAll);
 
-    /*  get("sync", (req, res) -> {
-
-      });*/
       // exception catching
       exception(Exception.class, (e, req, res) -> {
         LOG.error(e.getMessage(), e);
@@ -124,7 +124,7 @@ public class WarpFleetSynchronizer {
     }
     for (Object repo: repos) {
       JSONObject r = (JSONObject) repo;
-      LOG.debug("Synchronizing: " + r.optString("name"));
+      LOG.debug("Synchronizing: " + r.optString("name", "unknown"));
       status = gitAPI.cloneOrPull(r) && status;
       LOG.debug("Status: " + status);
     }
@@ -167,7 +167,7 @@ public class WarpFleetSynchronizer {
             new JSONObject()
                 .put("name", r.getString("name"))
                 .put("url", r.getString("url"))
-                .put("branch", "".equals(r.optString("branch")) ? "master" : r.getString("branch"))
+                .put("branch", r.optString("branch", "master"))
         );
       }
     } else {

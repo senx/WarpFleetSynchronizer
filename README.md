@@ -6,6 +6,8 @@ This Web server aims to synchronize git repositories and serve macros for the Wa
 
 ````json
 {
+  "host": "0.0.0.0",
+  "port": 8080,
   "repos" : [
     {
       "name": "warpfleet-macros",

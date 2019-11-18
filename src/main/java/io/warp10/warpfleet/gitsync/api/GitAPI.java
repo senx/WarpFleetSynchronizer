@@ -105,7 +105,7 @@ public class GitAPI {
     Git.cloneRepository()
         .setURI(remote.getString("url"))
         .setDirectory(dest)
-        .setBranch("".equals(remote.optString("branch")) ? "master" : remote.getString("branch"))
+        .setBranch(remote.optString("branch",  "master"))
         .setTransportConfigCallback(transport -> {
           SshTransport sshTransport = (SshTransport) transport;
           sshTransport.setSshSessionFactory(new JschConfigSessionFactory() {
@@ -114,12 +114,12 @@ public class GitAPI {
               session.setUserInfo(new UserInfo() {
                 @Override
                 public String getPassphrase() {
-                  return "".equals(remote.optString("passphrase")) ? null : remote.getString("passphrase");
+                  return remote.optString("passphrase", null);
                 }
 
                 @Override
                 public String getPassword() {
-                  return "".equals(remote.optString("password")) ? null : remote.getString("password");
+                  return remote.optString("password", null);
                 }
 
                 @Override
