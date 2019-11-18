@@ -2,12 +2,14 @@ package io.warp10.warpfleet.gitsync.api;
 
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
+import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.JschConfigSessionFactory;
 import org.eclipse.jgit.transport.OpenSshConfig;
 import org.eclipse.jgit.transport.SshTransport;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,9 +67,7 @@ public class GitAPI {
    * @throws IOException     the io exception
    */
   public boolean cloneOrPull(JSONObject remote) throws GitAPIException, IOException {
-    List<String> path = Arrays.asList(remote.getString("url").split("/"));
-    Collections.reverse(path);
-    File dir = new File(this.tmpPath + File.separator + path.get(0).replaceAll("\\.git", ""));
+    File dir = new File(this.tmpPath + File.separator + remote.getString("name"));
     if (!dir.exists()) {
       return this.clone(remote, dir);
     } else {
@@ -102,49 +102,60 @@ public class GitAPI {
 
   private boolean clone(JSONObject remote, File dest) throws GitAPIException, IOException {
     LOG.debug("Cloning " + dest.getName());
-    Git.cloneRepository()
+    CloneCommand git = Git.cloneRepository()
         .setURI(remote.getString("url"))
         .setDirectory(dest)
-        .setBranch(remote.optString("branch",  "master"))
-        .setTransportConfigCallback(transport -> {
-          SshTransport sshTransport = (SshTransport) transport;
-          sshTransport.setSshSessionFactory(new JschConfigSessionFactory() {
-            @Override
-            protected void configure(OpenSshConfig.Host host, Session session) {
-              session.setUserInfo(new UserInfo() {
-                @Override
-                public String getPassphrase() {
-                  return remote.optString("passphrase", null);
-                }
+        .setBranch(remote.optString("branch", "master"));
+    if (remote.getString("url").startsWith("http")) {
+      if (!"".equals(remote.optString("username", ""))) {
+        git.setCredentialsProvider(
+            new UsernamePasswordCredentialsProvider(
+                remote.optString("username", ""),
+                remote.optString("password", "")
+            )
+        );
+      }
+    } else {
+      git.setTransportConfigCallback(transport -> {
+        SshTransport sshTransport = (SshTransport) transport;
+        sshTransport.setSshSessionFactory(new JschConfigSessionFactory() {
+          @Override
+          protected void configure(OpenSshConfig.Host host, Session session) {
+            session.setUserInfo(new UserInfo() {
+              @Override
+              public String getPassphrase() {
+                return remote.optString("passphrase", null);
+              }
 
-                @Override
-                public String getPassword() {
-                  return remote.optString("password", null);
-                }
+              @Override
+              public String getPassword() {
+                return remote.optString("password", null);
+              }
 
-                @Override
-                public boolean promptPassword(String message) {
-                  return false;
-                }
+              @Override
+              public boolean promptPassword(String message) {
+                return false;
+              }
 
-                @Override
-                public boolean promptPassphrase(String message) {
-                  return true;
-                }
+              @Override
+              public boolean promptPassphrase(String message) {
+                return true;
+              }
 
-                @Override
-                public boolean promptYesNo(String message) {
-                  return false;
-                }
+              @Override
+              public boolean promptYesNo(String message) {
+                return false;
+              }
 
-                @Override
-                public void showMessage(String message) {
-                }
-              });
-            }
-          });
-        })
-        .call();
+              @Override
+              public void showMessage(String message) {
+              }
+            });
+          }
+        });
+      });
+    }
+    git.call();
     this.copyFolder(Path.of(dest.getAbsolutePath()));
     LOG.debug("Clone done");
     return true;

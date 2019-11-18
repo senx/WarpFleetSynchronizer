@@ -10,9 +10,15 @@ This Web server aims to synchronize git repositories and serve macros for the Wa
   "port": 8080,
   "repos" : [
     {
-      "name": "warpfleet-macros",
+      "name": "warpfleet-macros", // must be unique
       "url": "git@gitlab.com:senx/warpfleet-macros.git",
       "passphrase": "sshPass"
+    },
+    {
+      "name": "warpfleet-macros2",
+      "url": "https://gitlab.com/senx/warpfleet-macros.git",
+      "username": "homer",
+      "password": "httpPass"
     }
   ]
 }
