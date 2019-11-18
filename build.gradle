@@ -35,4 +35,4 @@ dependencies {
 }
 
 // Define the main class for the application
-mainClassName = 'io.warp10.warpfleet.gitsync.App'
+mainClassName = 'io.warp10.warpfleet.synchronizer.WarpFleetSynchronizer'

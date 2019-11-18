@@ -1,4 +1,4 @@
-package io.warp10.warpfleet.gitsync.api;
+package io.warp10.warpfleet.synchronizer.api;
 
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
@@ -18,9 +18,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
