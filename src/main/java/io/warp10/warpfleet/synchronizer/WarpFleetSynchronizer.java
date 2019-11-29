@@ -3,38 +3,31 @@
  */
 package io.warp10.warpfleet.synchronizer;
 
-import io.warp10.warpfleet.synchronizer.api.GitAPI;
-import org.apache.commons.io.FileUtils;
+import io.warp10.warpfleet.synchronizer.api.RepositoriesManager;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.json.JSONArray;
 import org.json.JSONObject;
-import spark.Request;
-import spark.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 
 import static spark.Spark.before;
+import static spark.Spark.delete;
 import static spark.Spark.exception;
 import static spark.Spark.get;
 import static spark.Spark.ipAddress;
 import static spark.Spark.notFound;
 import static spark.Spark.port;
+import static spark.Spark.put;
 import static spark.Spark.staticFiles;
 import static spark.Spark.threadPool;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The type Warp fleet synchronizer.
  */
 public class WarpFleetSynchronizer {
-  private static String MACROS_PATH = "macros";
-  private static String TMP_PATH = "tmp";
-  private static JSONObject CONF;
-  private static GitAPI gitAPI = new GitAPI(MACROS_PATH, TMP_PATH);
   private static Logger LOG = LoggerFactory.getLogger(WarpFleetSynchronizer.class);
+  private static RepositoriesManager repositoriesManager;
 
   /**
    * The entry point of application.
@@ -48,13 +41,13 @@ public class WarpFleetSynchronizer {
       System.exit(1);
     }
     try {
-      CONF = init(args[0]);
+      repositoriesManager = new RepositoriesManager(args[0], "macros");
 
-      port(CONF.optInt("port", 8080));
-      ipAddress(CONF.optString("host", "0.0.0.0"));
+      port(repositoriesManager.getConf().optInt("port", 8080));
+      ipAddress(repositoriesManager.getConf().optString("host", "0.0.0.0"));
       threadPool(8);
       // Serving macros
-      staticFiles.externalLocation(new File(MACROS_PATH).getAbsolutePath());
+      staticFiles.externalLocation(new File(repositoriesManager.getMacroPath()).getAbsolutePath());
 
       // Before filter
       before("/*", (req, res) -> res.header("Content-Type", "text/plain"));
@@ -67,27 +60,73 @@ public class WarpFleetSynchronizer {
        *
        * @apiSuccess {Object[]}  repos list of git repositories.
        */
-      get("/api/repos", WarpFleetSynchronizer::getRepos);
+      get("/api/repos", (request, response) -> repositoriesManager.getRepos());
+
 
       /**
-       * @api {get} /api/sync/:repo synchronize a particule repo
-       * @apiName SyncRepo
+       * @api {get} /api/repos/:repo fetch a repository by its name
+       * @apiName getRepo
        * @apiGroup WarpFleetSynchronizer
        *
-       * @apiParam {String} repo Repository's name.
+       * @apiParam {String} repo Repository name.
+       *
+       * @apiSuccess {Object}  repository Repository.
+       */
+      get("/api/repos/:repo", (request, response) -> repositoriesManager.getRepo(request.params(":repo")));
+
+      /**
+       * @api {delete} /api/repos/:repo delete a repository by its name
+       * @apiName deleteRepository
+       * @apiGroup WarpFleetSynchronizer
+       *
+       * @apiParam {String} repo Repository name.
        *
        * @apiSuccess {Object}  status status.
        */
-      get("/api/sync/:repo", WarpFleetSynchronizer::sync);
+      delete("/api/repos/:repo", (request, response) -> new JSONObject().put("status", repositoriesManager.deleteRepository(request.params(":repo"))));
+
+      /**
+       * @api {put} /api/repos Add a new repository
+       * @apiName addRepository
+       * @apiGroup WarpFleetSynchronizer
+       *
+       * @apiParam {Object} repository Repository.
+       *
+       * @apiSuccess {Object}  status status.
+       */
+      put("/api/repos", (request, response) -> new JSONObject().put("status", repositoriesManager.addRepository(new JSONObject(request.body()))));
+      /**
+       * @api {put} /api/repos update a repository by its name
+       * @apiName updateRepository
+       * @apiGroup WarpFleetSynchronizer
+       *
+       * @apiParam {Object} repository Repository.
+       * @apiParam {String} repo Repository name.
+       *
+       * @apiSuccess {Object}  status status.
+       */
+      put("/api/repos/:repo", (request, response) -> new JSONObject().put("status", repositoriesManager.updateRepository(request.params(":repo"), new JSONObject(request.body()))));
+
+      /**
+       * @api {get} /api/sync/:repo synchronize a particular repo
+       * @apiName sync
+       * @apiGroup WarpFleetSynchronizer
+       *
+       * @apiParam {String} repo Repository name.
+       *
+       * @apiSuccess {Object}  status status.
+       */
+      get("/api/sync/:repo", (request, response) -> new JSONObject().put("status", repositoriesManager.sync(request.params(":repo"))));
 
       /**
        * @api {get} /api/sync synchronize all
-       * @apiName SyncAll
+       * @apiName syncAll
        * @apiGroup WarpFleetSynchronizer
        *
        * @apiSuccess {Object}  status status.
        */
-      get("/api/sync", WarpFleetSynchronizer::syncAll);
+      get("/api/sync", (request, response) -> new JSONObject().put("status", repositoriesManager.syncAll()));
+
 
       // exception catching
       exception(Exception.class, (e, req, res) -> {
@@ -112,73 +151,5 @@ public class WarpFleetSynchronizer {
       LOG.error(e.getMessage(), e);
       System.exit(1);
     }
-  }
-
-  private static JSONObject syncAll(Request request, Response response) throws GitAPIException, IOException {
-    LOG.debug("Synchronize all repositories");
-    JSONArray repos = CONF.optJSONArray("repos");
-    boolean status = true;
-    if (null == repos) {
-      LOG.warn("No repositories configured");
-      repos = new JSONArray();
-    }
-    for (Object repo: repos) {
-      JSONObject r = (JSONObject) repo;
-      LOG.debug("Synchronizing: " + r.optString("name", "unknown"));
-      status = gitAPI.cloneOrPull(r) && status;
-      LOG.debug("Status: " + status);
-    }
-    return new JSONObject().put("status", status);
-  }
-
-  private static JSONObject sync(Request req, Response res) throws GitAPIException, IOException {
-    LOG.debug("Synchronizing: " + req.params(":repo"));
-    JSONArray repos = CONF.optJSONArray("repos");
-    boolean status = true;
-    if (null == repos) {
-      LOG.warn("No repositories configured");
-      repos = new JSONArray();
-    }
-    JSONObject remote = null;
-    for (Object repo: repos) {
-      JSONObject r = (JSONObject) repo;
-      if (r.getString("name").equals(req.params(":repo"))) {
-        LOG.debug("Found: " + r.toString());
-        remote = r;
-      }
-    }
-    if (null != remote) {
-      status = gitAPI.cloneOrPull(remote);
-      LOG.debug("Status: " + status);
-    } else {
-      LOG.warn("No remote found");
-    }
-    return new JSONObject().put("status", status);
-  }
-
-  private static JSONArray getRepos(Request req, Response res) {
-    LOG.debug("Get all repositories description");
-    JSONArray response = new JSONArray();
-    JSONArray repos = CONF.optJSONArray("repos");
-    if (repos != null) {
-      for (Object rep: CONF.getJSONArray("repos")) {
-        JSONObject r = (JSONObject) rep;
-        response.put(
-            new JSONObject()
-                .put("name", r.getString("name"))
-                .put("url", r.getString("url"))
-                .put("branch", r.optString("branch", "master"))
-        );
-      }
-    } else {
-      LOG.warn("No repositories configured");
-    }
-    return response;
-  }
-
-  private static JSONObject init(String confPath) throws IOException {
-    LOG.info("Initialization: " + confPath);
-    String jsonStr = FileUtils.readFileToString(new File(confPath), "UTF-8");
-    return new JSONObject(jsonStr);
   }
 }
