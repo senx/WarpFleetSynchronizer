@@ -17,6 +17,7 @@ import static spark.Spark.exception;
 import static spark.Spark.get;
 import static spark.Spark.ipAddress;
 import static spark.Spark.notFound;
+import static spark.Spark.options;
 import static spark.Spark.port;
 import static spark.Spark.put;
 import static spark.Spark.staticFiles;
@@ -49,9 +50,27 @@ public class WarpFleetSynchronizer {
       // Serving macros
       staticFiles.externalLocation(new File(repositoriesManager.getMacroPath()).getAbsolutePath());
 
+      // add CORS
+      options("/api/*", (request, response) -> {
+        String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
+        if (accessControlRequestHeaders != null) {
+          response.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
+        }
+        String accessControlRequestMethod = request.headers("Access-Control-Request-Method");
+        if (accessControlRequestMethod != null) {
+          response.header("Access-Control-Allow-Methods", accessControlRequestMethod);
+        }
+        return "OK";
+      });
+
       // Before filter
       before("/*", (req, res) -> res.header("Content-Type", "text/plain"));
-      before("/api/*", (req, res) -> res.header("Content-Type", "application/json"));
+      before("/api/*", (req, res) -> {
+        res.header("Access-Control-Allow-Origin", repositoriesManager.getConf().optString("remotes", ""));
+        res.header("Access-Control-Request-Method", "GET,PUT,OPTIONS,DELETE");
+        res.header("Access-Control-Allow-Headers", "*");
+        res.header("Content-Type", "application/json");
+      });
 
       /**
        * @api {get} /api/repos Request all configured repos
@@ -61,7 +80,6 @@ public class WarpFleetSynchronizer {
        * @apiSuccess {Object[]}  repos list of git repositories.
        */
       get("/api/repos", (request, response) -> repositoriesManager.getRepos());
-
 
       /**
        * @api {get} /api/repos/:repo fetch a repository by its name

@@ -8,6 +8,7 @@ This Web server aims to synchronize git repositories and serve macros for the Wa
 {
   "host": "0.0.0.0",
   "port": 8080,
+  "remotes": "www.myWebSite.com", // independant of your Warp 10 instance, for admin purpose
   "repos" : [
     {
       "name": "warpfleet-macros", // must be unique
