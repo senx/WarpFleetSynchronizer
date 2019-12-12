@@ -83,7 +83,7 @@ public class GitAPI {
   private void copy(Path source, Path dest) {
     LOG.trace("Copy from " + source.toAbsolutePath() + " to " + dest.toAbsolutePath());
     try {
-      dest.toFile().mkdirs();
+      dest.toFile().getParentFile().mkdirs();
       FileUtils.copyFile(source.toFile(), dest.toFile(), false);
     } catch (Exception e) {
       throw new RuntimeException(e.getMessage(), e);
