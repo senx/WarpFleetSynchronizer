@@ -2,6 +2,7 @@ package io.warp10.warpfleet.synchronizer.api;
 
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -16,10 +17,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.nio.file.Files.walk;
 
 /**
  * The type Git api.
@@ -74,16 +75,16 @@ public class GitAPI {
 
   private void copyFolder(Path src) throws IOException {
     LOG.debug("CopyFolder " + src.toAbsolutePath());
-    Files.walk(src)
+    walk(src.toAbsolutePath())
         .filter(GitAPI::testMC2)
-        .forEach(source -> copy(source, Path.of(new File(this.macrosPath).getAbsolutePath()).resolve(src.relativize(source))));
+        .forEach(source -> copy(source, Paths.get(new File(this.macrosPath).getAbsolutePath()).resolve(src.relativize(source))));
   }
 
   private void copy(Path source, Path dest) {
     LOG.trace("Copy from " + source.toAbsolutePath() + " to " + dest.toAbsolutePath());
     try {
-      dest.getParent().toFile().mkdirs();
-      Files.copy(source, dest, REPLACE_EXISTING);
+      dest.toFile().mkdirs();
+      FileUtils.copyFile(source.toFile(), dest.toFile(), false);
     } catch (Exception e) {
       throw new RuntimeException(e.getMessage(), e);
     }
@@ -92,7 +93,7 @@ public class GitAPI {
   private boolean pull(File dest) throws IOException {
     LOG.debug("Pulling " + dest.getName());
     new Git(new FileRepositoryBuilder().setGitDir(dest).readEnvironment().findGitDir().build()).pull();
-    this.copyFolder(Path.of(dest.getAbsolutePath()));
+    this.copyFolder(Paths.get(dest.getAbsolutePath()));
     LOG.debug("Pull done");
     return true;
   }
@@ -153,7 +154,7 @@ public class GitAPI {
       });
     }
     git.call();
-    this.copyFolder(Path.of(dest.getAbsolutePath()));
+    this.copyFolder(Paths.get(dest.getAbsolutePath()));
     LOG.debug("Clone done");
     return true;
   }
