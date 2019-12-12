@@ -42,29 +42,29 @@ public class WarpFleetSynchronizer {
       System.exit(1);
     }
     try {
-      repositoriesManager = new RepositoriesManager(args[0], "macros");
+      repositoriesManager = new RepositoriesManager(args[0], "macros/macros");
 
       port(repositoriesManager.getConf().optInt("port", 8080));
       ipAddress(repositoriesManager.getConf().optString("host", "0.0.0.0"));
       threadPool(8);
       // Serving macros
-      staticFiles.externalLocation(new File(repositoriesManager.getMacroPath()).getAbsolutePath());
+      staticFiles.externalLocation(new File(repositoriesManager.getMacroPath()).getParentFile().getAbsolutePath());
 
       // add CORS
-      options("/api/*", (request, response) -> {
-        String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
+      options("/api/*", (req, res) -> {
+        String accessControlRequestHeaders = req.headers("Access-Control-Request-Headers");
         if (accessControlRequestHeaders != null) {
-          response.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
+          res.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
         }
-        String accessControlRequestMethod = request.headers("Access-Control-Request-Method");
+        String accessControlRequestMethod = req.headers("Access-Control-Request-Method");
         if (accessControlRequestMethod != null) {
-          response.header("Access-Control-Allow-Methods", accessControlRequestMethod);
+          res.header("Access-Control-Allow-Methods", accessControlRequestMethod);
         }
         return "OK";
       });
 
       // Before filter
-      before("/*", (req, res) -> res.header("Content-Type", "text/plain"));
+      before("/macros/*", (req, res) -> res.header("Content-Type", "text/plain"));
       before("/api/*", (req, res) -> {
         res.header("Access-Control-Allow-Origin", repositoriesManager.getConf().optString("remotes", ""));
         res.header("Access-Control-Request-Method", "GET,PUT,OPTIONS,DELETE");
@@ -79,7 +79,16 @@ public class WarpFleetSynchronizer {
        *
        * @apiSuccess {Object[]}  repos list of git repositories.
        */
-      get("/api/repos", (request, response) -> repositoriesManager.getRepos());
+      get("/api/repos", (req, res) -> repositoriesManager.getRepos());
+
+      /**
+       * @api {get} /api/reload Reload configuration file
+       * @apiName reloadConf
+       * @apiGroup WarpFleetSynchronizer
+       *
+       * @apiSuccess {Object}  status status.
+       */
+      get("/api/reload", (req, res) -> repositoriesManager.reloadConf());
 
       /**
        * @api {get} /api/repos/:repo fetch a repository by its name
@@ -90,7 +99,7 @@ public class WarpFleetSynchronizer {
        *
        * @apiSuccess {Object}  repository Repository.
        */
-      get("/api/repos/:repo", (request, response) -> repositoriesManager.getRepo(request.params(":repo")));
+      get("/api/repos/:repo", (req, res) -> repositoriesManager.getRepo(req.params(":repo")));
 
       /**
        * @api {delete} /api/repos/:repo delete a repository by its name
@@ -101,7 +110,7 @@ public class WarpFleetSynchronizer {
        *
        * @apiSuccess {Object}  status status.
        */
-      delete("/api/repos/:repo", (request, response) -> new JSONObject().put("status", repositoriesManager.deleteRepository(request.params(":repo"))));
+      delete("/api/repos/:repo", (req, res) -> new JSONObject().put("status", repositoriesManager.deleteRepository(req.params(":repo"))));
 
       /**
        * @api {put} /api/repos Add a new repository
@@ -112,7 +121,7 @@ public class WarpFleetSynchronizer {
        *
        * @apiSuccess {Object}  status status.
        */
-      put("/api/repos", (request, response) -> new JSONObject().put("status", repositoriesManager.addRepository(new JSONObject(request.body()))));
+      put("/api/repos", (req, res) -> new JSONObject().put("status", repositoriesManager.addRepository(new JSONObject(req.body()))));
       /**
        * @api {put} /api/repos update a repository by its name
        * @apiName updateRepository
@@ -123,7 +132,7 @@ public class WarpFleetSynchronizer {
        *
        * @apiSuccess {Object}  status status.
        */
-      put("/api/repos/:repo", (request, response) -> new JSONObject().put("status", repositoriesManager.updateRepository(request.params(":repo"), new JSONObject(request.body()))));
+      put("/api/repos/:repo", (req, res) -> new JSONObject().put("status", repositoriesManager.updateRepository(req.params(":repo"), new JSONObject(req.body()))));
 
       /**
        * @api {get} /api/sync/:repo synchronize a particular repo
@@ -134,7 +143,7 @@ public class WarpFleetSynchronizer {
        *
        * @apiSuccess {Object}  status status.
        */
-      get("/api/sync/:repo", (request, response) -> new JSONObject().put("status", repositoriesManager.sync(request.params(":repo"))));
+      get("/api/sync/:repo", (req, res) -> new JSONObject().put("status", repositoriesManager.sync(req.params(":repo"))));
 
       /**
        * @api {get} /api/sync synchronize all
@@ -143,7 +152,7 @@ public class WarpFleetSynchronizer {
        *
        * @apiSuccess {Object}  status status.
        */
-      get("/api/sync", (request, response) -> new JSONObject().put("status", repositoriesManager.syncAll()));
+      get("/api/sync", (req, res) -> new JSONObject().put("status", repositoriesManager.syncAll()));
 
 
       // exception catching

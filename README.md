@@ -35,7 +35,7 @@ Now listen at 0.0.0.0:8080
 
 ### For WarpFleet Resolver
 
-    http://localhost:8080/path/to/macro.mc2
+    http://localhost:8080/macros/path/to/macro.mc2
 
 
 ### API

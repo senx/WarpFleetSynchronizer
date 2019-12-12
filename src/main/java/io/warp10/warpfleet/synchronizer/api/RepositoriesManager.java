@@ -199,4 +199,15 @@ public class RepositoriesManager {
   public String getMacroPath() {
     return macroPath;
   }
+
+  public JSONObject reloadConf() {
+    JSONObject status = new JSONObject();
+    try {
+      this.conf = new JSONObject(FileUtils.readFileToString(new File(this.confPath), "UTF-8"));
+      return status.put("status", true);
+    } catch (IOException e) {
+      LOG.error(e.getMessage(), e);
+      return status.put("status", false).put("message", e.getMessage());
+    }
+  }
 }
