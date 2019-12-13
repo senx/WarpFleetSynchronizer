@@ -69,15 +69,15 @@ public class GitAPI {
     if (!dir.exists()) {
       return this.clone(remote, dir);
     } else {
-      return this.pull(dir);
+      return this.pull(dir, remote.getString("name"));
     }
   }
 
-  private void copyFolder(Path src) throws IOException {
-    LOG.debug("CopyFolder " + src.toAbsolutePath());
+  private void copyFolder(Path src, String prefix) throws IOException {
+    LOG.debug("CopyFolder " + src.toAbsolutePath() + " to " + prefix);
     walk(src.toAbsolutePath())
         .filter(GitAPI::testMC2)
-        .forEach(source -> copy(source, Paths.get(new File(this.macrosPath).getAbsolutePath()).resolve(src.relativize(source))));
+        .forEach(source -> copy(source, Paths.get(new File(this.macrosPath).getAbsolutePath() + File.separator + prefix).resolve(src.relativize(source))));
   }
 
   private void copy(Path source, Path dest) {
@@ -90,10 +90,10 @@ public class GitAPI {
     }
   }
 
-  private boolean pull(File dest) throws IOException {
+  private boolean pull(File dest, String prefix) throws IOException {
     LOG.debug("Pulling " + dest.getName());
     new Git(new FileRepositoryBuilder().setGitDir(dest).readEnvironment().findGitDir().build()).pull();
-    this.copyFolder(Paths.get(dest.getAbsolutePath()));
+    this.copyFolder(Paths.get(dest.getAbsolutePath()), prefix);
     LOG.debug("Pull done");
     return true;
   }
@@ -147,6 +147,7 @@ public class GitAPI {
 
               @Override
               public void showMessage(String message) {
+                LOG.info(message);
               }
             });
           }
@@ -154,7 +155,7 @@ public class GitAPI {
       });
     }
     git.call();
-    this.copyFolder(Paths.get(dest.getAbsolutePath()));
+    this.copyFolder(Paths.get(dest.getAbsolutePath()), remote.getString("name"));
     LOG.debug("Clone done");
     return true;
   }
