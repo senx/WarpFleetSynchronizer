@@ -19,6 +19,7 @@ import static spark.Spark.ipAddress;
 import static spark.Spark.notFound;
 import static spark.Spark.options;
 import static spark.Spark.port;
+import static spark.Spark.post;
 import static spark.Spark.put;
 import static spark.Spark.staticFiles;
 import static spark.Spark.threadPool;
@@ -144,6 +145,17 @@ public class WarpFleetSynchronizer {
        * @apiSuccess {Object}  status status.
        */
       get("/api/sync/:repo", (req, res) -> new JSONObject().put("status", repositoriesManager.sync(req.params(":repo"))));
+
+      /**
+       * @api {post} /api/sync/:repo synchronize a particular repo
+       * @apiName sync
+       * @apiGroup WarpFleetSynchronizer
+       *
+       * @apiParam {String} repo Repository name.
+       *
+       * @apiSuccess {Object}  status status.
+       */
+      post("/api/sync/:repo", (req, res) -> new JSONObject().put("status", repositoriesManager.sync(req.params(":repo"))));
 
       /**
        * @api {get} /api/sync synchronize all
