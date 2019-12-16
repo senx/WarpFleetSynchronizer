@@ -5,8 +5,11 @@ import com.jcraft.jsch.UserInfo;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.PullCommand;
+import org.eclipse.jgit.api.PullResult;
+import org.eclipse.jgit.api.TransportCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.lib.RepositoryBuilder;
 import org.eclipse.jgit.transport.JschConfigSessionFactory;
 import org.eclipse.jgit.transport.OpenSshConfig;
 import org.eclipse.jgit.transport.SshTransport;
@@ -43,11 +46,13 @@ public class GitAPI {
     this.tmpPath = tmpPath;
     File repo = new File(this.macrosPath);
     if (!repo.exists()) {
-      repo.mkdirs();
+      boolean mkDirs = repo.mkdirs();
+      LOG.debug("mkDirs " + repo.getAbsolutePath() + ": " + mkDirs);
     }
     File tmp = new File(this.tmpPath);
     if (!tmp.exists()) {
-      tmp.mkdirs();
+      boolean mkDirs = tmp.mkdirs();
+      LOG.debug("mkDirs " + tmp.getAbsolutePath() + ": " + mkDirs);
     }
   }
 
@@ -69,7 +74,7 @@ public class GitAPI {
     if (!dir.exists()) {
       return this.clone(remote, dir);
     } else {
-      return this.pull(dir, remote.getString("name"));
+      return this.pull(remote, dir);
     }
   }
 
@@ -83,19 +88,33 @@ public class GitAPI {
   private void copy(Path source, Path dest) {
     LOG.trace("Copy from " + source.toAbsolutePath() + " to " + dest.toAbsolutePath());
     try {
-      dest.toFile().getParentFile().mkdirs();
+      boolean mkDirs = dest.toFile().getParentFile().mkdirs();
+      LOG.debug("mkDirs " + dest.toFile().getParentFile().getAbsolutePath() + ": " + mkDirs);
       FileUtils.copyFile(source.toFile(), dest.toFile(), false);
     } catch (Exception e) {
       throw new RuntimeException(e.getMessage(), e);
     }
   }
 
-  private boolean pull(File dest, String prefix) throws IOException {
+  private boolean pull(JSONObject remote, File dest) throws IOException, GitAPIException {
     LOG.debug("Pulling " + dest.getName());
-    new Git(new FileRepositoryBuilder().setGitDir(dest).readEnvironment().findGitDir().build()).pull();
-    this.copyFolder(Paths.get(dest.getAbsolutePath()), prefix);
-    LOG.debug("Pull done");
-    return true;
+    PullCommand git = new Git(new RepositoryBuilder().findGitDir(dest).build()).pull();
+    if (remote.getString("url").startsWith("http")) {
+      if (!"".equals(remote.optString("username", ""))) {
+        git.setCredentialsProvider(
+            new UsernamePasswordCredentialsProvider(
+                remote.optString("username", ""),
+                remote.optString("password", "")
+            )
+        );
+      }
+    } else {
+      setCredentials(git, remote);
+    }
+    PullResult result = git.call();
+    this.copyFolder(Paths.get(dest.getAbsolutePath()), remote.getString("name"));
+    LOG.debug("Pull done: " + result.isSuccessful());
+    return result.isSuccessful();
   }
 
   private boolean clone(JSONObject remote, File dest) throws GitAPIException, IOException {
@@ -114,49 +133,53 @@ public class GitAPI {
         );
       }
     } else {
-      git.setTransportConfigCallback(transport -> {
-        SshTransport sshTransport = (SshTransport) transport;
-        sshTransport.setSshSessionFactory(new JschConfigSessionFactory() {
-          @Override
-          protected void configure(OpenSshConfig.Host host, Session session) {
-            session.setUserInfo(new UserInfo() {
-              @Override
-              public String getPassphrase() {
-                return remote.optString("passphrase", null);
-              }
-
-              @Override
-              public String getPassword() {
-                return remote.optString("password", null);
-              }
-
-              @Override
-              public boolean promptPassword(String message) {
-                return false;
-              }
-
-              @Override
-              public boolean promptPassphrase(String message) {
-                return true;
-              }
-
-              @Override
-              public boolean promptYesNo(String message) {
-                return false;
-              }
-
-              @Override
-              public void showMessage(String message) {
-                LOG.info(message);
-              }
-            });
-          }
-        });
-      });
+      setCredentials(git, remote);
     }
     git.call();
     this.copyFolder(Paths.get(dest.getAbsolutePath()), remote.getString("name"));
     LOG.debug("Clone done");
     return true;
+  }
+
+  private void setCredentials(TransportCommand<?, ?> git, JSONObject remote) {
+    git.setTransportConfigCallback(transport -> {
+      SshTransport sshTransport = (SshTransport) transport;
+      sshTransport.setSshSessionFactory(new JschConfigSessionFactory() {
+        @Override
+        protected void configure(OpenSshConfig.Host host, Session session) {
+          session.setUserInfo(new UserInfo() {
+            @Override
+            public String getPassphrase() {
+              return remote.optString("passphrase", null);
+            }
+
+            @Override
+            public String getPassword() {
+              return remote.optString("password", null);
+            }
+
+            @Override
+            public boolean promptPassword(String message) {
+              return false;
+            }
+
+            @Override
+            public boolean promptPassphrase(String message) {
+              return true;
+            }
+
+            @Override
+            public boolean promptYesNo(String message) {
+              return false;
+            }
+
+            @Override
+            public void showMessage(String message) {
+              LOG.info(message);
+            }
+          });
+        }
+      });
+    });
   }
 }
