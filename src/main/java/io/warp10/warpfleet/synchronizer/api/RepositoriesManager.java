@@ -19,6 +19,7 @@ public class RepositoriesManager {
   private static Logger LOG = LoggerFactory.getLogger(RepositoriesManager.class);
   private JSONObject conf;
   private String macroPath;
+  private String tmpPath = "tmp";
   private String confPath;
   private GitAPI gitAPI;
 
@@ -34,19 +35,20 @@ public class RepositoriesManager {
     this.confPath = confPath;
     this.conf = new JSONObject(FileUtils.readFileToString(new File(confPath), "UTF-8"));
     this.macroPath = macroPath;
-    this.gitAPI = new GitAPI(this.macroPath, "tmp");
+    this.gitAPI = new GitAPI(this.macroPath, this.tmpPath);
   }
 
   /**
    * Add repository boolean.
    *
-   * @param repo the repo
+   * @param owner the owner
+   * @param repo  the repo
    * @return the boolean
    * @throws IOException the io exception
    */
-  public boolean addRepository(JSONObject repo) throws IOException {
-    AtomicBoolean status = new AtomicBoolean(true);
-    this.getRepos().forEach(r -> status.set(!repo.getString("name").equals(repo.getString("name"))));
+  public boolean addRepository(String owner, JSONObject repo) throws IOException {
+    AtomicBoolean status = new AtomicBoolean(false);
+    this.getRepos(owner).forEach(r -> status.set(!repo.getString("name").equals(repo.getString("name"))));
     if (!status.get()) {
       this.conf.getJSONArray("repos").put(repo);
       FileUtils.writeStringToFile(new File(this.confPath), this.conf.toString(), "UTF-8");
@@ -57,19 +59,22 @@ public class RepositoriesManager {
   /**
    * Delete repository boolean.
    *
+   * @param owner    the owner
    * @param repoName the repo name
    * @return the boolean
    * @throws IOException the io exception
    */
-  public boolean deleteRepository(String repoName) throws IOException {
+  public boolean deleteRepository(String owner, String repoName) throws IOException {
     JSONArray newRepoList = new JSONArray();
-    this.getRepos().forEach(r -> {
+    this.getRepos(owner).forEach(r -> {
       if (!((JSONObject) r).getString("name").equals(repoName)) {
         newRepoList.put(r);
       }
     });
     this.conf.put("repos", newRepoList);
     FileUtils.writeStringToFile(new File(this.confPath), this.conf.toString(), "UTF-8");
+    FileUtils.deleteQuietly(new File(new File(this.macroPath).getAbsolutePath() + File.separator + repoName));
+    FileUtils.deleteQuietly(new File(new File(this.tmpPath).getAbsolutePath() + File.separator + repoName));
     return true;
   }
 
@@ -132,21 +137,24 @@ public class RepositoriesManager {
   /**
    * Gets repos.
    *
+   * @param owner the owner
    * @return the repos
    */
-  public JSONArray getRepos() {
+  public JSONArray getRepos(String owner) {
     LOG.debug("Get all repositories description");
     JSONArray response = new JSONArray();
     JSONArray repos = conf.optJSONArray("repos");
     if (repos != null) {
       for (Object rep: conf.getJSONArray("repos")) {
         JSONObject r = (JSONObject) rep;
-        response.put(
-            new JSONObject()
-                .put("name", r.getString("name"))
-                .put("url", r.getString("url"))
-                .put("branch", r.optString("branch", "master"))
-        );
+        if (r.optString("owner", owner).equals(owner)) {
+          response.put(
+              new JSONObject()
+                  .put("name", r.getString("name"))
+                  .put("url", r.getString("url"))
+                  .put("branch", r.optString("branch", "master"))
+          );
+        }
       }
     } else {
       LOG.warn("No repositories configured");
@@ -157,12 +165,13 @@ public class RepositoriesManager {
   /**
    * Gets repo.
    *
+   * @param owner    the owner
    * @param repoName the repo name
    * @return the repo
    */
-  public JSONObject getRepo(String repoName) {
+  public JSONObject getRepo(String owner, String repoName) {
     AtomicReference<JSONObject> repo = new AtomicReference<>(new JSONObject());
-    this.getRepos().forEach(r -> {
+    this.getRepos(owner).forEach(r -> {
       if (((JSONObject) r).getString("name").equals(repoName)) {
         repo.set((JSONObject) r);
       }
@@ -173,13 +182,14 @@ public class RepositoriesManager {
   /**
    * Update repository boolean.
    *
+   * @param owner    the owner
    * @param repoName the repo name
    * @param repo     the repo
    * @return the boolean
    * @throws IOException the io exception
    */
-  public boolean updateRepository(String repoName, JSONObject repo) throws IOException {
-    return this.deleteRepository(repoName) && this.addRepository(repo.put("name", repoName));
+  public boolean updateRepository(String owner, String repoName, JSONObject repo) throws IOException {
+    return this.deleteRepository(owner, repoName) && this.addRepository(owner, repo.put("name", repoName));
   }
 
   /**
@@ -200,6 +210,11 @@ public class RepositoriesManager {
     return macroPath;
   }
 
+  /**
+   * Reload conf json object.
+   *
+   * @return the json object
+   */
   public JSONObject reloadConf() {
     JSONObject status = new JSONObject();
     try {

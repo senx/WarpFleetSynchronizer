@@ -76,11 +76,12 @@ public class WarpFleetSynchronizer {
       /**
        * @api {get} /api/repos Request all configured repos
        * @apiName getRepos
+       * @apiParam {String} owner Repository owner id.
        * @apiGroup WarpFleetSynchronizer
        *
        * @apiSuccess {Object[]}  repos list of git repositories.
        */
-      get("/api/repos", (req, res) -> repositoriesManager.getRepos());
+      get("/api/repos/:owner", (req, res) -> repositoriesManager.getRepos(req.params(":owner")));
 
       /**
        * @api {get} /api/reload Reload configuration file
@@ -97,10 +98,11 @@ public class WarpFleetSynchronizer {
        * @apiGroup WarpFleetSynchronizer
        *
        * @apiParam {String} repo Repository name.
+       * @apiParam {String} owner Repository owner id.
        *
        * @apiSuccess {Object}  repository Repository.
        */
-      get("/api/repos/:repo", (req, res) -> repositoriesManager.getRepo(req.params(":repo")));
+      get("/api/repos/:owner/:repo", (req, res) -> repositoriesManager.getRepo(req.params(":owner"), req.params(":repo")));
 
       /**
        * @api {delete} /api/repos/:repo delete a repository by its name
@@ -108,10 +110,11 @@ public class WarpFleetSynchronizer {
        * @apiGroup WarpFleetSynchronizer
        *
        * @apiParam {String} repo Repository name.
+       * @apiParam {String} owner Repository owner id.
        *
        * @apiSuccess {Object}  status status.
        */
-      delete("/api/repos/:repo", (req, res) -> new JSONObject().put("status", repositoriesManager.deleteRepository(req.params(":repo"))));
+      delete("/api/repos/:owner/:repo", (req, res) -> new JSONObject().put("status", repositoriesManager.deleteRepository(req.params(":owner"), req.params(":repo"))));
 
       /**
        * @api {put} /api/repos Add a new repository
@@ -119,21 +122,23 @@ public class WarpFleetSynchronizer {
        * @apiGroup WarpFleetSynchronizer
        *
        * @apiParam {Object} repository Repository.
+       * @apiParam {String} owner Repository owner id.
        *
        * @apiSuccess {Object}  status status.
        */
-      put("/api/repos", (req, res) -> new JSONObject().put("status", repositoriesManager.addRepository(new JSONObject(req.body()))));
+      put("/api/repos/:owner", (req, res) -> new JSONObject().put("status", repositoriesManager.addRepository(req.params(":owner"), new JSONObject(req.body()))));
       /**
        * @api {put} /api/repos update a repository by its name
        * @apiName updateRepository
        * @apiGroup WarpFleetSynchronizer
        *
        * @apiParam {Object} repository Repository.
+       * @apiParam {String} owner Repository owner id.
        * @apiParam {String} repo Repository name.
        *
        * @apiSuccess {Object}  status status.
        */
-      put("/api/repos/:repo", (req, res) -> new JSONObject().put("status", repositoriesManager.updateRepository(req.params(":repo"), new JSONObject(req.body()))));
+      put("/api/repos/:owner/:repo", (req, res) -> new JSONObject().put("status", repositoriesManager.updateRepository(req.params(":owner"), req.params(":repo"), new JSONObject(req.body()))));
 
       /**
        * @api {get} /api/sync/:repo synchronize a particular repo

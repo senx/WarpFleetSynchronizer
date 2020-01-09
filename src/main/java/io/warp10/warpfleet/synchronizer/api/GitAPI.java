@@ -7,7 +7,7 @@ import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PullResult;
-import org.eclipse.jgit.api.TransportCommand;
+import org.eclipse.jgit.api.TransportConfigCallback;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.RepositoryBuilder;
 import org.eclipse.jgit.transport.JschConfigSessionFactory;
@@ -109,7 +109,7 @@ public class GitAPI {
         );
       }
     } else {
-      setCredentials(git, remote);
+      git.setTransportConfigCallback(setCredentials(remote));
     }
     PullResult result = git.call();
     this.copyFolder(Paths.get(dest.getAbsolutePath()), remote.getString("name"));
@@ -133,7 +133,7 @@ public class GitAPI {
         );
       }
     } else {
-      setCredentials(git, remote);
+      git.setTransportConfigCallback(this.setCredentials(remote));
     }
     git.call();
     this.copyFolder(Paths.get(dest.getAbsolutePath()), remote.getString("name"));
@@ -141,8 +141,8 @@ public class GitAPI {
     return true;
   }
 
-  private void setCredentials(TransportCommand<?, ?> git, JSONObject remote) {
-    git.setTransportConfigCallback(transport -> {
+  private TransportConfigCallback setCredentials(JSONObject remote) {
+    return transport -> {
       SshTransport sshTransport = (SshTransport) transport;
       sshTransport.setSshSessionFactory(new JschConfigSessionFactory() {
         @Override
@@ -180,6 +180,6 @@ public class GitAPI {
           });
         }
       });
-    });
+    };
   }
 }
