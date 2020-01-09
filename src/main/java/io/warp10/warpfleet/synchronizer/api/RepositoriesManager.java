@@ -47,7 +47,7 @@ public class RepositoriesManager {
   public boolean addRepository(JSONObject repo) throws IOException {
     AtomicBoolean status = new AtomicBoolean(true);
     this.getRepos().forEach(r -> status.set(!repo.getString("name").equals(repo.getString("name"))));
-    if (status.get()) {
+    if (!status.get()) {
       this.conf.getJSONArray("repos").put(repo);
       FileUtils.writeStringToFile(new File(this.confPath), this.conf.toString(), "UTF-8");
     }

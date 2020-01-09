@@ -45,7 +45,7 @@ public class WarpFleetSynchronizer {
     try {
       repositoriesManager = new RepositoriesManager(args[0], "macros/macros");
 
-      port(repositoriesManager.getConf().optInt("port", 8080));
+      port(repositoriesManager.getConf().optInt("port", 8082));
       ipAddress(repositoriesManager.getConf().optString("host", "0.0.0.0"));
       threadPool(8);
       // Serving macros
