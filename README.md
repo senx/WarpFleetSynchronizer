@@ -11,15 +11,18 @@ This Web server aims to synchronize git repositories and serve macros for the Wa
   "remotes": "www.myWebSite.com", // independant of your Warp 10 instance, for admin purpose
   "repos" : [
     {
+      "owner": "hammet",
       "name": "warpfleet-macros", // must be unique
       "url": "git@gitlab.com:senx/warpfleet-macros.git",
       "passphrase": "sshPass"
     },
     {
+      "owner": "hetfield",
       "name": "warpfleet-macros2",
       "url": "https://gitlab.com/senx/warpfleet-macros.git",
-      "username": "homer",
-      "password": "httpPass"
+      "username": "oauth2",
+      "password": "<gitlab oAuth Token>",
+      "branch": "main"
     }
   ]
 }
@@ -50,7 +53,7 @@ Sync specific repo
 
 List repositories
 
-    http://localhost:8082/api/repos
+    http://localhost:8082/api/repos/<owner>
 
 
 > Copyright 2020  SenX S.A.S.
