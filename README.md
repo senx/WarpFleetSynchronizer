@@ -36,7 +36,7 @@ Now listen at 0.0.0.0:8082
 
 ## Run as service
 
-Add `/etc/systemd/system/warp10-synchronizer.service` with following content (adjust paths to your needs):
+Add `/etc/systemd/system/warpfleet-synchronizer.service` with following content (adjust paths to your needs):
 
 ```
 [Unit]
@@ -48,8 +48,8 @@ After=network-online.target
 Type=simple
 User=warp10
 Group=warp10
-WorkingDirectory=/path/to/warp10/synchronizer
-ExecStart=java -jar /path/to/warp10/synchronizer/bin/WarpFleetSynchronizer-all.jar /path/to/warp10/synchronizer/conf/synchronizer.conf
+WorkingDirectory=/path/to/warpfleet/synchronizer
+ExecStart=java -jar /path/to/warpfleet/synchronizer/bin/WarpFleetSynchronizer-all.jar /path/to/warpfleet/synchronizer/conf/synchronizer.conf
 Restart=on-failure
 SuccessExitStatus=143 
 
@@ -59,16 +59,21 @@ WantedBy=multi-user.target
 Then start service and enable at boot time:
 
 ```commandline
-sudo systemctl start warp10-synchronizer
-sudo systemctl enable warp10-synchronizer
+sudo systemctl start warpfleet-synchronizer
+sudo systemctl enable warpfleet-synchronizer
 ```
 Check it works as expected:
 
-````commandline
-sudo systemctl status warp10-synchronizer
+```commandline
+sudo systemctl status warpfleet-synchronizer
 or
-journalctl -fu warp10-synchronizer
-````
+journalctl -fu warpfleet-synchronizer
+```
+
+Note:
+* Clones of git repositories will be stored in `/path/to/warpfleet/synchronizer/tmp`
+* Macros will be stored in `/path/to/warpfleet/synchronizer/macros/macros/<repo>` 
+
 
 ## Usage
 
