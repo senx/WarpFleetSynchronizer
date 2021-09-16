@@ -28,7 +28,7 @@ import static spark.Spark.threadPool;
  * The type Warp fleet synchronizer.
  */
 public class WarpFleetSynchronizer {
-  private static Logger LOG = LoggerFactory.getLogger(WarpFleetSynchronizer.class);
+  private static final Logger LOG = LoggerFactory.getLogger(WarpFleetSynchronizer.class);
   private static RepositoriesManager repositoriesManager;
 
   /**
