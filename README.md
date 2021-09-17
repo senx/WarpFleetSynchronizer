@@ -77,9 +77,13 @@ Note:
 
 ## Usage
 
-### For WarpFleet Resolver
+### Test in your browser
 
     http://localhost:8082/macros/<repo name>/path/to/macro.mc2
+
+### For WarpFleet Resolver
+
+    http://localhost:8082/macros/
 
 
 ### API
