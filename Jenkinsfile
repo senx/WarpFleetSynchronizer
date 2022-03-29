@@ -26,15 +26,6 @@ pipeline {
             }
         }
 
-        stage("Build") {
-            steps {
-                nvm('version':'v17.1.0') {
-                    sh 'yarn install'
-                    sh "yarn doc"
-                }
-            }
-        }
-
         stage("Package") {
             steps {
                 sh "./gradlew shadowJar"
@@ -90,17 +81,18 @@ pipeline {
             }
             parallel {
                 stage('Deploy to DockerHub') {
-                options {
-                    timeout(time: 2, unit: 'HOURS')
-                }
-                input {
-                    message 'Should we deploy to DockerHub?'
-                }
-                steps {
-                    sh 'DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx use multiarch'
-                    sh "DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 -t warp10io/warpfleetsynchronizer:latest -t warp10io/warpfleetsynchronizer:${version} ."
-                    sh "docker system prune --force --all --volumes --filter 'label=maintainer=contact@senx.io'"
-                    this.notifyBuild('PUBLISHED', version)
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
+                    input {
+                        message 'Should we deploy to DockerHub?'
+                    }
+                    steps {
+                        sh 'DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx use multiarch'
+                        sh "DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 -t warp10io/warpfleetsynchronizer:latest -t warp10io/warpfleetsynchronizer:${version} ."
+                        sh "docker system prune --force --all --volumes --filter 'label=maintainer=contact@senx.io'"
+                        this.notifyBuild('PUBLISHED', version)
+                    }
                 }
             }
         }
@@ -118,7 +110,7 @@ pipeline {
         unstable {
           this.notifyBuild('UNSTABLE', version)
         }
-      }
+     }
 }
 
 void notifyBuild(String buildStatus, String version) {
