@@ -10,7 +10,7 @@
     "doc": "apidoc -i src/main/java -o apidoc && apidoc-markdown -p apidoc -o doc/API.md"
   },
   "devDependencies": {
-    "apidoc": "^0.18.0",
-    "apidoc-markdown": "^0.2.1"
+    "apidoc": "^0.51.0",
+    "apidoc-markdown": "^7.1.0"
   }
 }

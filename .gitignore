@@ -10,3 +10,4 @@ tmp
 apidoc
 *.lock
 node_modules
+conf.json
