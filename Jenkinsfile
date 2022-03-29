@@ -20,14 +20,9 @@ pipeline {
             }
         }
 
-        stage("Prepare") {
-            steps {
-                sh "./gradlew clean"
-            }
-        }
-
         stage("Package") {
             steps {
+                sh "./gradlew clean"
                 sh "./gradlew shadowJar"
                 archiveArtifacts "build/libs/WarpFleetSynchronizer-all.jar"
             }
@@ -61,12 +56,6 @@ pipeline {
         stage("Deploy to prod 242") {
             when {
                 expression { return isItATagCommit() }
-            }
-            options {
-                timeout(time: 30, unit: 'DAYS')
-            }
-            input {
-                message "Should we deploy $version to prod 242?"
             }
             steps {
                 sh "scp build/libs/WarpFleetSynchronizer-all.jar root@172.16.0.242:/opt/www/WarpFleetSynchronizer/."
