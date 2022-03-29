@@ -79,25 +79,21 @@ pipeline {
             when {
                 expression { return isItATagCommit() }
             }
-            parallel {
-                   stage('Deploy to DockerHub') {
-                     options {
-                       timeout(time: 2, unit: 'HOURS')
-                     }
-                     input {
-                       message 'Should we deploy to DockerHub?'
-                     }
-                    steps {
-                        sh 'DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx use multiarch'
-                        sh "DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 -t warp10io/warpfleetsynchronizer:latest -t warp10io/warpfleetsynchronizer:${version} ."
-                        sh "docker system prune --force --all --volumes --filter 'label=maintainer=contact@senx.io'"
-                        this.notifyBuild('PUBLISHED', version)
-                    }
-               }
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+            input {
+                message 'Should we deploy to DockerHub?'
+            }
+            steps {
+                sh 'DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx use multiarch'
+                sh "DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 -t warp10io/warpfleetsynchronizer:latest -t warp10io/warpfleetsynchronizer:${version} ."
+                sh "docker system prune --force --all --volumes --filter 'label=maintainer=contact@senx.io'"
+                this.notifyBuild('PUBLISHED', version)
             }
         }
     }
-     post {
+    post {
         success {
             this.notifyBuild('SUCCESSFUL', version)
         }
@@ -110,7 +106,7 @@ pipeline {
         unstable {
             this.notifyBuild('UNSTABLE', version)
         }
-     }
+    }
 }
 
 void notifyBuild(String buildStatus, String version) {
@@ -138,13 +134,13 @@ void notifyBuild(String buildStatus, String version) {
 }
 
 String getParam(String key) {
-  return params.get(key)
+    return params.get(key)
 }
 
 void notifySlack(String color, String message, String buildStatus) {
-  String slackURL = getParam('slackUrl')
-  String payload = "{\"username\": \"${env.JOB_NAME}\",\"attachments\":[{\"title\": \"${env.JOB_NAME} ${buildStatus}\",\"color\": \"${color}\",\"text\": \"${message}\"}]}" as String
-  sh "curl -X POST -H 'Content-type: application/json' --data '${payload}' ${slackURL}" as String
+    String slackURL = getParam('slackUrl')
+    String payload = "{\"username\": \"${env.JOB_NAME}\",\"attachments\":[{\"title\": \"${env.JOB_NAME} ${buildStatus}\",\"color\": \"${color}\",\"text\": \"${message}\"}]}" as String
+    sh "curl -X POST -H 'Content-type: application/json' --data '${payload}' ${slackURL}" as String
 }
 
 
