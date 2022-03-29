@@ -75,40 +75,36 @@ pipeline {
                 this.notifyBuild('PUBLISHED', version)
             }
         }
-        stage('Deploy') {
+        stage('Deploy to DockerHub') {
             when {
                 expression { return isItATagCommit() }
             }
-            parallel {
-                stage('Deploy to DockerHub') {
-                    options {
-                        timeout(time: 2, unit: 'HOURS')
-                    }
-                    input {
-                        message 'Should we deploy to DockerHub?'
-                    }
-                    steps {
-                        sh 'DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx use multiarch'
-                        sh "DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 -t warp10io/warpfleetsynchronizer:latest -t warp10io/warpfleetsynchronizer:${version} ."
-                        sh "docker system prune --force --all --volumes --filter 'label=maintainer=contact@senx.io'"
-                        this.notifyBuild('PUBLISHED', version)
-                    }
-                }
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+            input {
+                message 'Should we deploy to DockerHub?'
+            }
+            steps {
+                sh 'DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx use multiarch'
+                sh "DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 -t warp10io/warpfleetsynchronizer:latest -t warp10io/warpfleetsynchronizer:${version} ."
+                sh "docker system prune --force --all --volumes --filter 'label=maintainer=contact@senx.io'"
+                this.notifyBuild('PUBLISHED', version)
             }
         }
     }
      post {
         success {
-          this.notifyBuild('SUCCESSFUL', version)
+            this.notifyBuild('SUCCESSFUL', version)
         }
         failure {
-          this.notifyBuild('FAILURE', version)
+            this.notifyBuild('FAILURE', version)
         }
         aborted {
-          this.notifyBuild('ABORTED', version)
+            this.notifyBuild('ABORTED', version)
         }
         unstable {
-          this.notifyBuild('UNSTABLE', version)
+            this.notifyBuild('UNSTABLE', version)
         }
      }
 }
