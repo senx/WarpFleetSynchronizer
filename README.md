@@ -7,7 +7,7 @@ This Web server aims to synchronize git repositories and serve macros for the Wa
 ````json
 {
   "host": "0.0.0.0",
-  "port": 8082,
+  "port": 8080,
   "remotes": "www.myWebSite.com", // independant of your Warp 10 instance, for admin purpose
   "repos" : [
     {
@@ -28,11 +28,15 @@ This Web server aims to synchronize git repositories and serve macros for the Wa
 }
 ````
 
+## Docker 
+
+    docker run -d  -v /path/to/conf/file/dir/:/data -p 8888:8080 warp10io/warpfleetsynchronizer:latest
+
 ## Run 
 
 `java -jar WarpFleetSynchronizer.jar ./path/to/conf.json`
 
-Now listen at 0.0.0.0:8082
+Now listen at 0.0.0.0:8080
 
 ## Run as service
 
@@ -79,29 +83,29 @@ Note:
 
 ### Test in your browser
 
-    http://localhost:8082/macros/<repo name>/path/to/macro.mc2
+    http://localhost:8080/macros/<repo name>/path/to/macro.mc2
 
 ### For WarpFleet Resolver
 
-    http://localhost:8082/macros/
+    http://localhost:8080/macros/
 
 
 ### API
 
 Sync all
 
-    http://localhost:8082/api/sync
+    http://localhost:8080/api/sync
     
 Sync specific repo
 
-    http://localhost:8082/api/sync/myRepo
+    http://localhost:8080/api/sync/myRepo
 
 List repositories
 
-    http://localhost:8082/api/repos/<owner>
+    http://localhost:8080/api/repos/<owner>
 
 
-> Copyright 2019-2021  SenX S.A.S.
+> Copyright 2019-2022  SenX S.A.S.
 >
 > [https://senx.io](https://senx.io)
 
