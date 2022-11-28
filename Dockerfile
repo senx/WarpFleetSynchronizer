@@ -1,4 +1,5 @@
-FROM adoptopenjdk:8-jdk-hotspot-bionic AS builder
+FROM openjdk:18-slim
+
 WORKDIR /home/wf
 COPY ./build/libs/WarpFleetSynchronizer-all.jar /home/wf/.
 EXPOSE 8080

@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2022  SenX S.A.S.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *     http:www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package io.warp10.warpfleet.synchronizer.api;
 
 import com.jcraft.jsch.Session;
@@ -29,10 +45,10 @@ import static java.nio.file.Files.walk;
  * The type Git api.
  */
 public class GitAPI {
-  private static Logger LOG = LoggerFactory.getLogger(GitAPI.class);
+  private static final Logger LOG = LoggerFactory.getLogger(GitAPI.class);
 
-  private String macrosPath;
-  private String tmpPath;
+  private final String macrosPath;
+  private final String tmpPath;
 
   /**
    * Instantiates a new Git api.
@@ -79,10 +95,15 @@ public class GitAPI {
   }
 
   private void copyFolder(Path src, String prefix) throws IOException {
+    Path dest = Paths.get(new File(this.macrosPath).getAbsolutePath() + File.separator + prefix);
+    LOG.debug("Clean " + dest);
+    FileUtils.deleteDirectory(dest.toFile());
+    FileUtils.forceMkdir(dest.toFile());
+
     LOG.debug("CopyFolder " + src.toAbsolutePath() + " to " + prefix);
     walk(src.toAbsolutePath())
         .filter(GitAPI::testMC2)
-        .forEach(source -> copy(source, Paths.get(new File(this.macrosPath).getAbsolutePath() + File.separator + prefix).resolve(src.relativize(source))));
+        .forEach(source -> copy(source, dest.resolve(src.relativize(source))));
   }
 
   private void copy(Path source, Path dest) {
