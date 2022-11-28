@@ -72,9 +72,9 @@ pipeline {
         expression { return isItATagCommit() }
       }
       steps {
-        sh "scp build/libs/WarpFleetSynchronizer-all.jar root@172.16.0.242:/opt/www/WarpFleetSynchronizer/."
-        sh "ssh root@172.16.0.242 'service warpfleetsync stop'  || true"
-        sh "ssh root@172.16.0.242 'service warpfleetsync start' || true"
+        sh "ssh root@172.16.0.242 'docker pull registry.gitlab.com/senx/warpfleetsynchronizer:$version'"
+        sh "ssh root@172.16.0.242 'docker stop warpfleetsynchronizer'"
+        sh "ssh root@172.16.0.242 'docker run --rm -d -p 3003:3003 -v /opt/www/WarpFleetSynchronizer/macros:/home/wfs/macros -v /opt/www/WarpFleetSynchronizer/conf.json:/data/conf.json --name=warpfleetsynchronizer registry.gitlab.com/senx/warpfleetsynchronizer:$version'"
         this.notifyBuild('PUBLISHED', version)
       }
     }

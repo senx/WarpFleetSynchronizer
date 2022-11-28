@@ -32,12 +32,12 @@ import java.util.concurrent.atomic.AtomicReference;
  * The type Warp fleet service.
  */
 public class RepositoriesManager {
-  private static Logger LOG = LoggerFactory.getLogger(RepositoriesManager.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RepositoriesManager.class);
   private JSONObject conf;
-  private String macroPath;
-  private String tmpPath = "tmp";
-  private String confPath;
-  private GitAPI gitAPI;
+  private final String macroPath;
+  private final String tmpPath = "tmp";
+  private final String confPath;
+  private final GitAPI gitAPI;
 
   /**
    * Instantiates a new Warp fleet service.
