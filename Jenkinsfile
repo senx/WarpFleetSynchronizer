@@ -45,8 +45,8 @@ pipeline {
     stage("Deploy to prod 7") {
       steps {
         sh "scp build/libs/WarpFleetSynchronizer-all.jar root@172.16.0.7:/opt/www/WarpFleetSynchronizer/."
-        sh "ssh root@172.16.0.7 'service warpfleetsync stop'"
-        sh "ssh root@172.16.0.7 'service warpfleetsync start'"
+        sh "ssh root@172.16.0.7 'service warpfleetsync stop' || true"
+        sh "ssh root@172.16.0.7 'service warpfleetsync start' || true"
       }
     }
 
