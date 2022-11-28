@@ -92,6 +92,8 @@ pipeline {
           }
           steps {
             sh "docker  push warp10io/warpfleetsynchronizer:latest"
+            sh "docker build -t warp10io/warpfleetsynchronizer:latest ."
+            sh "docker build -t warp10io/warpfleetsynchronizer:$version ."
             sh "docker  push -t warp10io/warpfleetsynchronizer:${version} ."
             sh "docker system prune --force --all --volumes --filter 'label=maintainer=contact@senx.io'"
             this.notifyBuild('PUBLISHED', version)
