@@ -64,6 +64,8 @@ pipeline {
         sh "docker system prune --force --all --volumes --filter 'label=maintainer=contact@senx.io'"
         sh "docker build -t registry.gitlab.com/senx/warpfleetsynchronizer:latest ."
         sh "docker build -t registry.gitlab.com/senx/warpfleetsynchronizer:$version ."
+        sh "docker push registry.gitlab.com/senx/warpfleetsynchronizer:latest"
+        sh "docker push registry.gitlab.com/senx/warpfleetsynchronizer:${version}"
       }
     }
 
