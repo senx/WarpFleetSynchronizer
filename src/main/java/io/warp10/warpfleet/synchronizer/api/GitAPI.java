@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 import static java.nio.file.Files.walk;
 
@@ -97,9 +98,9 @@ public class GitAPI {
   private void copyFolder(Path src, String prefix) throws IOException {
     Path dest = Paths.get(new File(this.macrosPath).getAbsolutePath() + File.separator + prefix);
     LOG.debug("Clean " + dest);
-    FileUtils.deleteDirectory(dest.toFile());
-    FileUtils.forceMkdir(dest.toFile());
-
+    for (File file: Objects.requireNonNull(dest.toFile().listFiles())) {
+        FileUtils.deleteQuietly(file);
+    }
     LOG.debug("CopyFolder " + src.toAbsolutePath() + " to " + prefix);
     walk(src.toAbsolutePath())
         .filter(GitAPI::testMC2)
