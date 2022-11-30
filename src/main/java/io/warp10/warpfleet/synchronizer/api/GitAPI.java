@@ -98,8 +98,12 @@ public class GitAPI {
   private void copyFolder(Path src, String prefix) throws IOException {
     Path dest = Paths.get(new File(this.macrosPath).getAbsolutePath() + File.separator + prefix);
     LOG.debug("Clean " + dest);
-    for (File file: Objects.requireNonNull(dest.toFile().listFiles())) {
+    if(dest.toFile().exists()) {
+      for (File file: Objects.requireNonNull(dest.toFile().listFiles())) {
         FileUtils.deleteQuietly(file);
+      }
+    } else {
+      FileUtils.forceMkdir(dest.toFile());
     }
     LOG.debug("CopyFolder " + src.toAbsolutePath() + " to " + prefix);
     walk(src.toAbsolutePath())
