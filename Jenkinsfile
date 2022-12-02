@@ -72,7 +72,7 @@ pipeline {
                 expression { return isItATagCommit() }
             }
             parallel {
-                stage('Deploy to DockerHub') {
+                stage('Deploy to prod 242') {
                     options {
                         timeout(time: 2, unit: 'HOURS')
                     }
