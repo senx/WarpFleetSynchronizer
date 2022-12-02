@@ -1,4 +1,4 @@
-FROM openjdk:18-slim
+FROM openjdk:18-ea-slim
 
 WORKDIR /home/wf
 COPY ./build/libs/WarpFleetSynchronizer-all.jar /home/wf/.
