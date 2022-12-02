@@ -63,7 +63,7 @@ pipeline {
             steps {
                 sh 'DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx use multiarch'
                 sh "docker system prune --force --all --volumes --filter 'label=maintainer=contact@senx.io'"
-                sh "DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform linux/amd64,linux/arm64,linux/arm64/v8 --push -t registry.gitlab.com/senx/warpfleetsynchronizer:latest -t registry.gitlab.com/senx/warpfleetsynchronizer:$version ."
+                sh "DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 --push -t registry.gitlab.com/senx/warpfleetsynchronizer:latest -t registry.gitlab.com/senx/warpfleetsynchronizer:$version ."
             }
         }
 
@@ -71,11 +71,21 @@ pipeline {
             when {
                 expression { return isItATagCommit() }
             }
-            steps {
-                sh "ssh root@172.16.0.242 'docker pull registry.gitlab.com/senx/warpfleetsynchronizer:$version'"
-                sh "ssh root@172.16.0.242 'docker stop warpfleetsynchronizer'"
-                sh "ssh root@172.16.0.242 'docker run --rm -d -p 3003:3003 -v /opt/www/WarpFleetSynchronizer/macros:/home/wf/macros -v /opt/www/WarpFleetSynchronizer/conf.json:/data/conf.json --name=warpfleetsynchronizer registry.gitlab.com/senx/warpfleetsynchronizer:$version'"
-                this.notifyBuild('PUBLISHED', version)
+            parallel {
+                stage('Deploy to DockerHub') {
+                    options {
+                        timeout(time: 2, unit: 'HOURS')
+                    }
+                    input {
+                        message 'Should we deploy to prod 242?'
+                    }
+                    steps {
+                        sh "ssh root@172.16.0.242 'docker pull registry.gitlab.com/senx/warpfleetsynchronizer:$version'"
+                        sh "ssh root@172.16.0.242 'docker stop warpfleetsynchronizer'"
+                        sh "ssh root@172.16.0.242 'docker run --rm -d -p 3003:3003 -v /opt/www/WarpFleetSynchronizer/macros:/home/wf/macros -v /opt/www/WarpFleetSynchronizer/conf.json:/data/conf.json --name=warpfleetsynchronizer registry.gitlab.com/senx/warpfleetsynchronizer:$version'"
+                        this.notifyBuild('PUBLISHED', version)
+                    }
+                }
             }
         }
         stage('Deploy to DockerHub') {
@@ -92,7 +102,7 @@ pipeline {
                     }
                     steps {
                         sh 'DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx use multiarch'
-                        sh "DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm64/v8 -t warp10io/warpfleetsynchronizer:latest -t warp10io/warpfleetsynchronizer:${version} ."
+                        sh "DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 -t warp10io/warpfleetsynchronizer:latest -t warp10io/warpfleetsynchronizer:${version} ."
                         sh "docker system prune --force --all --volumes --filter 'label=maintainer=contact@senx.io'"
                         this.notifyBuild('PUBLISHED', version)
                     }

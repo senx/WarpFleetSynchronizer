@@ -1,4 +1,4 @@
-FROM openjdk:18-ea-slim
+FROM eclipse-temurin:18-jre-jammy
 
 WORKDIR /home/wf
 COPY ./build/libs/WarpFleetSynchronizer-all.jar /home/wf/.
