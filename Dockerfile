@@ -1,4 +1,4 @@
-FROM eclipse-temurin:18-jre-jammy
+FROM eclipse-temurin:18-jre-focal
 
 WORKDIR /home/wf
 COPY ./build/libs/WarpFleetSynchronizer-all.jar /home/wf/.
