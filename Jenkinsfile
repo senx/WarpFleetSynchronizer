@@ -23,6 +23,7 @@ pipeline {
     }
     environment {
         version = "${getVersion()}"
+        DOCKER_HUB_CREDS = credentials('dockerhub')
     }
     stages {
         stage("Checkout") {
@@ -101,6 +102,7 @@ pipeline {
                         message 'Should we deploy to DockerHub?'
                     }
                     steps {
+                        sh 'echo ${DOCKER_HUB_CREDS_PSW} | docker login --username ${DOCKER_HUB_CREDS_USR} --password-stdin'
                         sh 'DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx use multiarch'
                         sh "DOCKER_BUILD_KIT=1 DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --push --platform linux/amd64,linux/arm64,linux/arm/v7 -t warp10io/warpfleetsynchronizer:latest -t warp10io/warpfleetsynchronizer:${version} ."
                         sh "docker system prune --force --all --volumes --filter 'label=maintainer=contact@senx.io'"
